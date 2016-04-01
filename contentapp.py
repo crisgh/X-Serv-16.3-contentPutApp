@@ -20,63 +20,55 @@ class contentApp (webapp.webApp):
     # Declare and initialize content
     content = {'/': 'Root page',
                '/page': 'A page'
-               '/cris': 'http://gsyc.es'
                } # Son variables de clase
 
     def parse(self, request): # Tiene que saber que tipo de metodo y recurso se utiliza
                               # y el cuerpo (PUT-Creo el cuerpo/GET-no importa el cuerpo)
         """Return the resource name (including /)"""
         # Ejemplo : GET | /pepe | HTTP1.1
-        metodo = request.split(' ',1)[0] # partes una vez y te quedas con el primero (GET)
-
-        recurso = request.split(' ', 2)[1] # partimos dos veces por cada espacio y te quedas
-                                           # con el segundo (el del medio :PEPE)
-
-        cuerpo = request.split('\r\n\r\n',1)[1]
-
-        return metodo , recurso , cuerpo # Lo dividimos por espacios y nos quedamos con el recurso
-                                        # Con la barra incluida (/urltochaca.com )
-    def process(self, peticion):
-        """Process the relevant elements of the request.
-        Finds the HTML text corresponding to the resource name,
-        ignoring requests for resources not in the dictionary.
-        """
-        metodo , recurso , cuerpo = peticion
-        if metodo == "GET":
-            if resourceName "/pepe": # self.content es un diccionario (clave/valor)
-                httpCode = "302 Found\r\nLocation: " + self.content['/cris'] + '\r\n' # Con esto hemos realizado el redireccionamiento
-                htmlBody = "<html><body>" + self.content[resourceName] \
-                    + "</body></html>"
-
-            if resourceName in self.content: # self.content es un diccionario (clave/valor)
-                httpCode = "200 OK"
-                htmlBody = "<html><body>" + self.content[resourceName] \
-                    + "</body></html>" # resourceName nos devuelve el valor ; '\' nos indica que la linea sigue
-                # ¡¡ AQUI VAN LAS FOTOS !!
-
-            if recurso in self.content: # self.content es un diccionario (clave/valor)
-                httpCode = "200 OK"
-                htmlBody = "<html><body>" + self.content[resourceName] \
-                    + "</body></html>" # resourceName nos devuelve el valor ; '\' nos indica que la linea sigue
-
+        try:
+            metodo = request.split(' ',1)[0] # partes una vez y te quedas con el primero (GET)
+            recurso = request.split(' ', 2)[1] # partimos dos veces por cada espacio y te quedas
+                                               # con el segundo (el del medio :PEPE)
+            if metodo == 'POST':
+                cuerpo = request.split('\r\n\r\n')[1]
             else:
-                httpCode = "404 Not Found"
-                htmlBody = "Not Found"
-        elif metodo == "PUT" or metodo == "POST": # aqui nos leeria el post -- POSTER (app)
-            self.content[recurso]  = cuerpo.split('=')[1] # si no existe el cuerpo lo meto y si existe lo actualiza
-            httpCode = "200 OK"
-            htmlBody = "Todo Bien"
+                cuerpo = ''
+        except IndexError:
+            return None
+        return (metodo , recurso , cuerpo) # Lo dividimos por espacios y nos quedamos con el recurso
+                                        # Con la barra incluida (/urltochaca.com )
 
+    def process(self, resourceName):
+
+        metodo, recurso, cuerpo = resourceName
+
+        #si el recuerso esta en content:
+        if metodo == 'GET':
+            if recurso in self.content:
+                httpCode = '200 OK'
+                htmlBody += '<html><body>' + self.content[recurso]
+                htmlBody +='<form method="POST" action="">'
+                htmlBody += 'New URL: <input type="text" name="new_URL"><br>'
+                htmlBody += '<input type="submit" value="Send">'
+                htmlBody += '</form>'
+                htmlBody += '</body></html>'
+            else:
+        #si no encuentro not found
+                httpCode = '404 Not Found'
+                htmlBody = 'Not Found'
+        elif metodo == 'PUT'or metodo == 'POST':
+            self.content[recurso]=cuerpo
+            httpCode = '200 OK'
+            htmlBody = 'Todo ha ido bien'
         else:
-            httpCode = "405 Method Not Allowed"
-            htmlBody = "Go away!"  # Este seria el cuerpo ; NOTA: El Head no mira los cuerpos
+            httpCode = '405 Method Not'
+            htmlBody = 'Go Away!'
         return (httpCode, htmlBody)
 
 
 if __name__ == "__main__":
-    testWebApp = contentApp("localhost", 1234)
-# Formulario :  <form method= "POST" action=""#mandame a la propia pagina en la que esto>
-#                   <input type = "submit" value "Enviar">
-#                   <input type = "text" name = "firstname">
-#               </form>
-# Lo copiamos y lo guardamos en oto fichero
+    try:
+        testWebApp = contentApp("localhost", 2312)
+    except KeyboardInterrupt:
+        print "Servidor cerrado"
